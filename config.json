@@ -1,12 +1,10 @@
 {
   "input": [
     {
-      "type": "maxmindGeoLite2CountryCSV",
+      "type": "ipinfoCountryMMDB",
       "action": "add",
       "args": {
-        "country": "./geolite2/GeoLite2-Country-Locations-en.csv",
-        "ipv4": "./geolite2/GeoLite2-Country-Blocks-IPv4.csv",
-        "ipv6": "./geolite2/GeoLite2-Country-Blocks-IPv6.csv"
+        "uri": "./output/ipinfo_lite.mmdb"
       }
     },
     {
@@ -115,11 +113,10 @@
       }
     },
     {
-      "type": "maxmindGeoLite2ASNCSV",
+      "type": "ipinfoASNMMDB",
       "action": "add",
       "args": {
-        "ipv4": "./geolite2/GeoLite2-ASN-Blocks-IPv4.csv",
-        "ipv6": "./geolite2/GeoLite2-ASN-Blocks-IPv6.csv",
+        "uri": "./output/ipinfo_lite.mmdb",
         "wantedList": {
           "cloudflare": [
             "AS395747",
@@ -232,12 +229,12 @@
       }
     },
     {
-      "type": "maxmindMMDB",
+      "type": "ipinfoCountryMMDB",
       "action": "output",
       "args": {
         "outputDir": "./output",
         "outputName": "Country.mmdb",
-        "sourceMMDBURI": "./output/GeoLite2-Country.mmdb",
+        "sourceMMDBURI": "./output/ipinfo_lite.mmdb",
         "overwriteList": [
           "cn",
           "cloudflare",
@@ -254,12 +251,12 @@
       }
     },
     {
-      "type": "maxmindMMDB",
+      "type": "ipinfoCountryMMDB",
       "action": "output",
       "args": {
         "outputDir": "./output",
         "outputName": "Country-without-asn.mmdb",
-        "sourceMMDBURI": "./output/GeoLite2-Country.mmdb",
+        "sourceMMDBURI": "./output/ipinfo_lite.mmdb",
         "overwriteList": ["cn", "private"],
         "excludedList": [
           "cloudflare",
@@ -275,17 +272,17 @@
       }
     },
     {
-      "type": "maxmindMMDB",
+      "type": "ipinfoCountryMMDB",
       "action": "output",
       "args": {
         "outputDir": "./output",
         "outputName": "Country-only-cn-private.mmdb",
-        "sourceMMDBURI": "./output/GeoLite2-Country.mmdb",
+        "sourceMMDBURI": "./output/ipinfo_lite.mmdb",
         "wantedList": ["cn", "private"]
       }
     },
     {
-      "type": "maxmindMMDB",
+      "type": "ipinfoCountryMMDB",
       "action": "output",
       "args": {
         "outputDir": "./output",
