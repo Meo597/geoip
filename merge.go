@@ -4,9 +4,9 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Loyalsoldier/geoip/lib"
-	"github.com/Loyalsoldier/geoip/plugin/special"
 	"github.com/spf13/cobra"
+	"github.com/xtls/geoip/lib"
+	"github.com/xtls/geoip/plugin/special"
 )
 
 func init() {

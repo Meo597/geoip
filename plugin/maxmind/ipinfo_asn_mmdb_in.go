@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Loyalsoldier/geoip/lib"
 	"github.com/oschwald/maxminddb-golang/v2"
+	"github.com/xtls/geoip/lib"
 )
 
 const (

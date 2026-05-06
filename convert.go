@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/Loyalsoldier/geoip/lib"
 	"github.com/spf13/cobra"
+	"github.com/xtls/geoip/lib"
 )
 
 func init() {

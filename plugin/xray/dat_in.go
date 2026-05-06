@@ -1,4 +1,4 @@
-package v2ray
+package xray
 
 import (
 	"encoding/json"
@@ -9,13 +9,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Loyalsoldier/geoip/lib"
+	"github.com/xtls/geoip/lib"
 	"google.golang.org/protobuf/proto"
 )
 
 const (
-	TypeGeoIPDatIn = "v2rayGeoIPDat"
-	DescGeoIPDatIn = "Convert V2Ray GeoIP dat to other formats"
+	TypeGeoIPDatIn = "xrayGeoIPDat"
+	DescGeoIPDatIn = "Convert Xray GeoIP dat to other formats"
 )
 
 func init() {
@@ -177,8 +177,8 @@ func (g *GeoIPDatIn) generateEntries(reader io.Reader, entries map[string]*lib.E
 			entry = lib.NewEntry(name)
 		}
 
-		for _, v2rayCIDR := range geoip.Cidr {
-			ipStr := net.IP(v2rayCIDR.GetIp()).String() + "/" + fmt.Sprint(v2rayCIDR.GetPrefix())
+		for _, xrayCIDR := range geoip.Cidr {
+			ipStr := net.IP(xrayCIDR.GetIp()).String() + "/" + fmt.Sprint(xrayCIDR.GetPrefix())
 			if err := entry.AddPrefix(ipStr); err != nil {
 				return err
 			}

@@ -8,14 +8,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Loyalsoldier/geoip/lib"
-	"github.com/Loyalsoldier/geoip/plugin/maxmind"
-	"github.com/Loyalsoldier/geoip/plugin/mihomo"
-	"github.com/Loyalsoldier/geoip/plugin/plaintext"
-	"github.com/Loyalsoldier/geoip/plugin/singbox"
-	"github.com/Loyalsoldier/geoip/plugin/special"
-	"github.com/Loyalsoldier/geoip/plugin/v2ray"
 	"github.com/spf13/cobra"
+	"github.com/xtls/geoip/lib"
+	"github.com/xtls/geoip/plugin/maxmind"
+	"github.com/xtls/geoip/plugin/mihomo"
+	"github.com/xtls/geoip/plugin/plaintext"
+	"github.com/xtls/geoip/plugin/singbox"
+	"github.com/xtls/geoip/plugin/special"
+	"github.com/xtls/geoip/plugin/xray"
 )
 
 var supportedInputFormats = map[string]bool{
@@ -28,13 +28,13 @@ var supportedInputFormats = map[string]bool{
 	strings.ToLower("singboxSRS"):            true,
 	strings.ToLower("surgeRuleSet"):          true,
 	strings.ToLower("text"):                  true,
-	strings.ToLower("v2rayGeoIPDat"):         true,
+	strings.ToLower("xrayGeoIPDat"):          true,
 }
 
 func init() {
 	rootCmd.AddCommand(lookupCmd)
 
-	lookupCmd.Flags().StringP("format", "f", "", "(Required) The input format. Available formats: text, v2rayGeoIPDat, maxmindMMDB, dbipCountryMMDB, ipinfoCountryMMDB, mihomoMRS, singboxSRS, clashRuleSet, clashRuleSetClassical, surgeRuleSet")
+	lookupCmd.Flags().StringP("format", "f", "", "(Required) The input format. Available formats: text, xrayGeoIPDat, maxmindMMDB, dbipCountryMMDB, ipinfoCountryMMDB, mihomoMRS, singboxSRS, clashRuleSet, clashRuleSetClassical, surgeRuleSet")
 	lookupCmd.Flags().StringP("uri", "u", "", "URI of the input file, support both local file path and remote HTTP(S) URL. (Cannot be used with \"dir\" flag)")
 	lookupCmd.Flags().StringP("dir", "d", "", "Path to the input directory. The filename without extension will be as the name of the list. (Cannot be used with \"uri\" flag)")
 	lookupCmd.Flags().StringSliceP("searchlist", "l", []string{}, "The lists to search from, separated by comma")
@@ -206,11 +206,11 @@ func getInputForLookup(format, name, uri, dir string) lib.InputConverter {
 			InputDir:    dir,
 		}
 
-	case strings.ToLower(v2ray.TypeGeoIPDatIn):
-		input = &v2ray.GeoIPDatIn{
-			Type:        v2ray.TypeGeoIPDatIn,
+	case strings.ToLower(xray.TypeGeoIPDatIn):
+		input = &xray.GeoIPDatIn{
+			Type:        xray.TypeGeoIPDatIn,
 			Action:      lib.ActionAdd,
-			Description: v2ray.DescGeoIPDatIn,
+			Description: xray.DescGeoIPDatIn,
 			URI:         uri,
 		}
 

@@ -30,7 +30,7 @@
 - **stdin**：从 standard input 获取纯文本 IP 和 CIDR（例如：`1.1.1.1` 或 `1.0.0.0/24`）
 - **surgeRuleSet**：Surge RuleSet
 - **text**：纯文本 IP 和 CIDR（例如：`1.1.1.1` 或 `1.0.0.0/24`）
-- **v2rayGeoIPDat**：V2Ray GeoIP dat 数据格式（`geoip.dat`）
+- **xrayGeoIPDat**：Xray GeoIP dat 数据格式（`geoip.dat`）
 
 支持的 `output` 输出格式：
 
@@ -45,7 +45,7 @@
 - **stdout**：将纯文本 CIDR 输出到 standard output（例如：`1.0.0.0/24`）
 - **surgeRuleSet**：Surge RuleSet
 - **text**：纯文本 CIDR（例如：`1.0.0.0/24`）
-- **v2rayGeoIPDat**：V2Ray GeoIP dat 数据格式（`geoip.dat`）
+- **xrayGeoIPDat**：Xray GeoIP dat 数据格式（`geoip.dat`）
 
 ## `input` 输入格式配置项
 
@@ -832,18 +832,18 @@
 }
 ```
 
-### **v2rayGeoIPDat**
+### **xrayGeoIPDat**
 
 - **type**：（必须）输入格式的名称
 - **action**：（必须）操作类型，值为 `add`（添加 IP 地址）或 `remove`（移除 IP 地址）
 - **args**：（必须）
-  - **uri**：（必须）V2Ray dat 格式 geoip 文件路径，可为本地文件路径或远程 `http`、`https` 文件 URL。（不能与 `inputDir` 同时使用；需要与 `name` 同时使用）
+  - **uri**：（必须）Xray dat 格式 geoip 文件路径，可为本地文件路径或远程 `http`、`https` 文件 URL。（不能与 `inputDir` 同时使用；需要与 `name` 同时使用）
   - **wantedList**：（可选，数组）指定需要的类别/文件。
   - **onlyIPType**：（可选）只处理的 IP 地址类型，值为 `ipv4` 或 `ipv6`
 
 ```jsonc
 {
-  "type": "v2rayGeoIPDat",
+  "type": "xrayGeoIPDat",
   "action": "add",         // 添加 IP 地址
   "args": {
     "uri": "./cn.dat"      // 读取本地文件 cn.dat 中的类别、IPv4 和 IPv6 地址
@@ -853,7 +853,7 @@
 
 ```jsonc
 {
-  "type": "v2rayGeoIPDat",
+  "type": "xrayGeoIPDat",
   "action": "add",                    // 添加 IP 地址
   "args": {
     "uri": "./geoip.dat",             // 读取本地文件 geoip.dat 中的类别
@@ -865,7 +865,7 @@
 
 ```jsonc
 {
-  "type": "v2rayGeoIPDat",
+  "type": "xrayGeoIPDat",
   "action": "remove",                       // 移除 IP 地址
   "args": {
     "uri": "https://example.com/geoip.dat", // 读取网络文件内容
@@ -1679,7 +1679,7 @@
 }
 ```
 
-### **v2rayGeoIPDat**
+### **xrayGeoIPDat**
 
 - **type**：（必须）输入格式的名称
 - **action**：（必须）操作类型，值必须为 `output`
@@ -1694,14 +1694,14 @@
 ```jsonc
 // 默认输出目录 ./output/dat
 {
-  "type": "v2rayGeoIPDat",
+  "type": "xrayGeoIPDat",
   "action": "output"      // 输出全部类别
 }
 ```
 
 ```jsonc
 {
-  "type": "v2rayGeoIPDat",
+  "type": "xrayGeoIPDat",
   "action": "output",
   "args": {
     "oneFilePerList": true // 每个类别输出为一个单独的文件
@@ -1711,7 +1711,7 @@
 
 ```jsonc
 {
-  "type": "v2rayGeoIPDat",
+  "type": "xrayGeoIPDat",
   "action": "output",
   "args": {
     "outputDir": "./output",                   // 输出文件到 output 目录
@@ -1723,7 +1723,7 @@
 
 ```jsonc
 {
-  "type": "v2rayGeoIPDat",
+  "type": "xrayGeoIPDat",
   "action": "output",
   "args": {
     "outputDir": "./output",                      // 输出文件到 output 目录
@@ -1735,7 +1735,7 @@
 
 ```jsonc
 {
-  "type": "v2rayGeoIPDat",
+  "type": "xrayGeoIPDat",
   "action": "output",
   "args": {
     "outputName": "geoip-asn.dat",        // 输出文件名为 geoip-asn.dat
@@ -1747,7 +1747,7 @@
 
 ```jsonc
 {
-  "type": "v2rayGeoIPDat",
+  "type": "xrayGeoIPDat",
   "action": "output",
   "args": {
     "wantedList": ["telegram", "google"], // 只输出 telegram、google

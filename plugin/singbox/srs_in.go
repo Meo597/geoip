@@ -10,8 +10,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Loyalsoldier/geoip/lib"
 	"github.com/sagernet/sing-box/common/srs"
+	"github.com/xtls/geoip/lib"
 )
 
 const (

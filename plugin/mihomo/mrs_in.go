@@ -13,8 +13,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Loyalsoldier/geoip/lib"
 	"github.com/klauspost/compress/zstd"
+	"github.com/xtls/geoip/lib"
 	"go4.org/netipx"
 )
 

@@ -1,4 +1,4 @@
-module github.com/Loyalsoldier/geoip
+module github.com/xtls/geoip
 
 go 1.25
 

@@ -1,4 +1,4 @@
-package v2ray
+package xray
 
 import (
 	"encoding/json"
@@ -10,13 +10,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Loyalsoldier/geoip/lib"
+	"github.com/xtls/geoip/lib"
 	"google.golang.org/protobuf/proto"
 )
 
 const (
-	TypeGeoIPDatOut = "v2rayGeoIPDat"
-	DescGeoIPDatOut = "Convert data to V2Ray GeoIP dat format"
+	TypeGeoIPDatOut = "xrayGeoIPDat"
+	DescGeoIPDatOut = "Convert data to Xray GeoIP dat format"
 )
 
 var (
@@ -186,18 +186,18 @@ func (g *GeoIPDatOut) generateGeoIP(entry *lib.Entry) (*GeoIP, error) {
 		return nil, err
 	}
 
-	v2rayCIDR := make([]*CIDR, 0, len(entryCidr))
+	xrayCIDR := make([]*CIDR, 0, len(entryCidr))
 	for _, prefix := range entryCidr {
-		v2rayCIDR = append(v2rayCIDR, &CIDR{
+		xrayCIDR = append(xrayCIDR, &CIDR{
 			Ip:     prefix.Addr().AsSlice(),
 			Prefix: uint32(prefix.Bits()),
 		})
 	}
 
-	if len(v2rayCIDR) > 0 {
+	if len(xrayCIDR) > 0 {
 		return &GeoIP{
 			CountryCode: entry.GetName(),
-			Cidr:        v2rayCIDR,
+			Cidr:        xrayCIDR,
 		}, nil
 	}
 
