@@ -1,8 +1,9 @@
 name: Build geoip files
+
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * 4"
+    - cron: "0 20 * * *"
   push:
     branches:
       - master
@@ -10,8 +11,10 @@ on:
       - ".gitignore"
       - "LICENSE*"
       - "*.md"
+
 permissions:
   contents: write
+
 jobs:
   build:
     name: Build
