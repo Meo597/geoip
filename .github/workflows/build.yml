@@ -60,6 +60,11 @@ jobs:
             $(go env GOPATH)/bin/mmdbverify -file ${name}
           done
 
+      - name: Remove IPinfo Lite files to avoid publishing
+        run: |
+          rm -rf ./output/ipinfo_lite.mmdb
+          rm -rf ./output/ipinfo_lite.mmdb.sha256sum
+
       - name: Generate sha256 checksum for dat files
         run: |
           cd ./output || exit 1
@@ -96,8 +101,6 @@ jobs:
       - name: Remove some files to avoid publishing to GitHub release
         run: |
           rm -rf ./output/*.{gz,zip}
-          rm -rf ./output/ipinfo_lite.mmdb
-          rm -rf ./output/ipinfo_lite.mmdb.sha256sum
           rm -rf ./output/{clash,dat,mrs,nginx,srs,surge,text}
 
       - name: Upload files to GitHub release
