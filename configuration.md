@@ -19,7 +19,8 @@
 - **clashRuleSetClassical**：classical 类型的 Clash RuleSet
 - **cutter**：用于裁剪前置步骤中的数据
 - **dbipCountryMMDB**：DB-IP country mmdb 数据格式（`dbip-country-lite.mmdb`）
-- **ipinfoCountryMMDB**：IPInfo country mmdb 数据格式（`country.mmdb`）
+- **ipinfoCountryMMDB**：IPInfo Lite mmdb 数据格式（`ipinfo_lite.mmdb`，按国家/地区读取）
+- **ipinfoASNMMDB**：IPInfo Lite mmdb 数据格式（`ipinfo_lite.mmdb`，按 ASN 读取）
 - **json**：JSON 数据格式
 - **maxmindGeoLite2ASNCSV**：MaxMind GeoLite2 ASN CSV 数据格式（`GeoLite2-ASN-CSV.zip`）
 - **maxmindGeoLite2CountryCSV**：MaxMind GeoLite2 country CSV 数据格式（`GeoLite2-Country-CSV.zip`）
@@ -37,7 +38,7 @@
 - **clashRuleSet**：ipcidr 类型的 Clash RuleSet
 - **clashRuleSetClassical**：classical 类型的 Clash RuleSet
 - **dbipCountryMMDB**：DB-IP country mmdb 数据格式（`dbip-country-lite.mmdb`）
-- **ipinfoCountryMMDB**：IPInfo country mmdb 数据格式（`country.mmdb`）
+- **ipinfoCountryMMDB**：IPInfo Lite mmdb 数据格式（`ipinfo_lite.mmdb`，按国家/地区读取）
 - **lookup**：从指定的列表中查找指定的 IP 或 CIDR
 - **maxmindMMDB**：MaxMind GeoLite2 country mmdb 数据格式（`GeoLite2-Country.mmdb`）
 - **mihomoMRS**：mihomo MRS 数据格式（`geoip-cn.mrs`）
@@ -233,7 +234,7 @@
 
 ```jsonc
 // 默认使用文件：
-// ./ipinfo/country.mmdb
+// ./ipinfo/ipinfo_lite.mmdb
 {
   "type": "ipinfoCountryMMDB",
   "action": "add"       // 添加 IP 地址
@@ -245,7 +246,7 @@
   "type": "ipinfoCountryMMDB",
   "action": "add",       // 添加 IP 地址
   "args": {
-    "uri": "./ipinfo/country.mmdb"
+    "uri": "./ipinfo/ipinfo_lite.mmdb"
   }
 }
 ```
@@ -270,6 +271,70 @@
     "uri": "https://example.com/my.mmdb",
     "wantedList": ["cn", "us", "jp"],    // 只移除名为 cn、us、jp 这三个类别的 IPv4 地址
     "onlyIPType": "ipv4"                 // 只移除 IPv4 地址
+  }
+}
+```
+
+### **ipinfoASNMMDB**
+
+- **type**：（必须）输入格式的名称
+- **action**：（必须）操作类型，值为 `add`（添加 IP 地址）或 `remove`（移除 IP 地址）
+- **args**：（可选）
+  - **uri**：（可选）IPInfo Lite MMDB 格式文件路径，可为本地文件路径或远程 `http`、`https` 文件 URL。
+  - **wantedList**：（可选，数组或对象；当为数组时，值为 ASN 字符串；当为对象时，键为类别名，值为 ASN 字符串数组）指定 ASN 或类别名及其包含的 ASN。若未指定，则默认选择所有 ASN。
+  - **onlyIPType**：（可选）只处理的 IP 地址类型，值为 `ipv4` 或 `ipv6`。
+
+```jsonc
+// 默认使用文件：
+// ./ipinfo/ipinfo_lite.mmdb
+{
+  "type": "ipinfoASNMMDB",
+  "action": "add"                   // 添加 IP 地址
+}
+```
+
+```jsonc
+{
+  "type": "ipinfoASNMMDB",
+  "action": "add",                  // 添加 IP 地址
+  "args": {
+    "uri": "./ipinfo/ipinfo_lite.mmdb"
+  }
+}
+```
+
+```jsonc
+{
+  "type": "ipinfoASNMMDB",
+  "action": "add",                                   // 添加 IP 地址
+  "args": {
+    "wantedList": {
+      "facebook": ["AS63293", "AS54115", "AS32934"], // 将属于这些 ASN 的 IPv4 和 IPv6 地址添加到 facebook 类别
+      "fastly":   ["AS54113", "AS394192"]            // 将属于这些 ASN 的 IPv4 和 IPv6 地址添加到 fastly 类别
+    }
+  }
+}
+```
+
+```jsonc
+// 由于未指定 `wantedList`，自动将所有 ASN 添加为类别，类别名格式为 AS + ASN 字符串，如 `AS123`、`AS12345`
+{
+  "type": "ipinfoASNMMDB",
+  "action": "add",                  // 添加 IP 地址
+  "args": {
+    "onlyIPType": "ipv4"            // 只添加各自的 IPv4 地址
+  }
+}
+```
+
+```jsonc
+{
+  "type": "ipinfoASNMMDB",
+  "action": "remove",                   // 移除 IP 地址
+  "args": {
+    "uri": "https://example.com/my.mmdb",
+    "wantedList": ["AS123", "AS4567"],  // 从名为 AS123 和 AS4567 的类别中分别移除各自的 IPv6 地址
+    "onlyIPType": "ipv6"
   }
 }
 ```
@@ -1235,7 +1300,7 @@
     "outputName": "Country.mmdb",                 // 输出文件名为 Country.mmdb
     "excludedList": ["private"],                  // 最终不输出 private 类别
     "overwriteList": ["private" ,"cn", "google"], // 确保 cn、google 类别最后写入，且 google 比 cn 后写入。但由于 private 存在于 excludedList 中，最终不输出 private 类别
-    "sourceMMDBURI": "./ipinfo/country.mmdb"      // 用于补全生成的 MMDB 格式文件额外信息的 IPInfo 官方 country MMDB 格式文件。由于 private、google 类别不属于国家/地区类别，无法补全额外信息。
+    "sourceMMDBURI": "./ipinfo/ipinfo_lite.mmdb"  // 用于补全生成的 MMDB 格式文件额外信息的 IPInfo Lite MMDB 文件。由于 private、google 类别不属于国家/地区类别，无法补全额外信息。
   }
 }
 ```

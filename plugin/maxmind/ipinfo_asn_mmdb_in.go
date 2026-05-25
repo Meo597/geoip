@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/oschwald/maxminddb-golang/v2"
@@ -15,8 +14,6 @@ const (
 	TypeIPInfoASNMMDBIn = "ipinfoASNMMDB"
 	DescIPInfoASNMMDBIn = "Convert IPInfo Lite ASN mmdb database to other formats"
 )
-
-var defaultIPInfoLiteMMDBFile = filepath.Join("./", "ipinfo", "ipinfo_lite.mmdb")
 
 func init() {
 	lib.RegisterInputConfigCreator(TypeIPInfoASNMMDBIn, func(action lib.Action, data json.RawMessage) (lib.InputConverter, error) {
@@ -40,9 +37,7 @@ func newIPInfoASNMMDBIn(action lib.Action, data json.RawMessage) (lib.InputConve
 		}
 	}
 
-	if tmp.URI == "" {
-		tmp.URI = defaultIPInfoLiteMMDBFile
-	}
+	tmp.URI = defaultIPInfoLiteMMDBURI(tmp.URI)
 
 	return &IPInfoASNMMDBIn{
 		Type:        TypeIPInfoASNMMDBIn,

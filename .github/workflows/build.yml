@@ -44,8 +44,8 @@ jobs:
             echo "IPINFO_TOKEN is required"
             exit 1
           fi
-          mkdir -p output
-          curl --fail --location "https://ipinfo.io/data/ipinfo_lite.mmdb?_src=frontend&token=${IPINFO_TOKEN}" -o ./output/ipinfo_lite.mmdb
+          mkdir -p ipinfo
+          curl --fail --location "https://ipinfo.io/data/ipinfo_lite.mmdb?_src=frontend&token=${IPINFO_TOKEN}" -o ./ipinfo/ipinfo_lite.mmdb
 
       - name: Build geoip files
         run: |
@@ -59,11 +59,6 @@ jobs:
           for name in $(ls *.mmdb); do
             $(go env GOPATH)/bin/mmdbverify -file ${name}
           done
-
-      - name: Remove IPinfo Lite files to avoid publishing
-        run: |
-          rm -rf ./output/ipinfo_lite.mmdb
-          rm -rf ./output/ipinfo_lite.mmdb.sha256sum
 
       - name: Generate sha256 checksum for dat files
         run: |
@@ -100,7 +95,6 @@ jobs:
 
       - name: Remove some files to avoid publishing to GitHub release
         run: |
-          rm -rf ./output/*.{gz,zip}
           rm -rf ./output/{clash,dat,mrs,nginx,srs,surge,text}
 
       - name: Upload files to GitHub release

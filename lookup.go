@@ -22,6 +22,7 @@ var supportedInputFormats = map[string]bool{
 	strings.ToLower("clashRuleSet"):          true,
 	strings.ToLower("clashRuleSetClassical"): true,
 	strings.ToLower("dbipCountryMMDB"):       true,
+	strings.ToLower("ipinfoASNMMDB"):         true,
 	strings.ToLower("ipinfoCountryMMDB"):     true,
 	strings.ToLower("maxmindMMDB"):           true,
 	strings.ToLower("mihomoMRS"):             true,
@@ -34,7 +35,7 @@ var supportedInputFormats = map[string]bool{
 func init() {
 	rootCmd.AddCommand(lookupCmd)
 
-	lookupCmd.Flags().StringP("format", "f", "", "(Required) The input format. Available formats: text, xrayGeoIPDat, maxmindMMDB, dbipCountryMMDB, ipinfoCountryMMDB, mihomoMRS, singboxSRS, clashRuleSet, clashRuleSetClassical, surgeRuleSet")
+	lookupCmd.Flags().StringP("format", "f", "", "(Required) The input format. Available formats: text, xrayGeoIPDat, maxmindMMDB, dbipCountryMMDB, ipinfoCountryMMDB, ipinfoASNMMDB, mihomoMRS, singboxSRS, clashRuleSet, clashRuleSetClassical, surgeRuleSet")
 	lookupCmd.Flags().StringP("uri", "u", "", "URI of the input file, support both local file path and remote HTTP(S) URL. (Cannot be used with \"dir\" flag)")
 	lookupCmd.Flags().StringP("dir", "d", "", "Path to the input directory. The filename without extension will be as the name of the list. (Cannot be used with \"uri\" flag)")
 	lookupCmd.Flags().StringSliceP("searchlist", "l", []string{}, "The lists to search from, separated by comma")
@@ -183,6 +184,14 @@ func getInputForLookup(format, name, uri, dir string) lib.InputConverter {
 			Type:        maxmind.TypeIPInfoCountryMMDBIn,
 			Action:      lib.ActionAdd,
 			Description: maxmind.DescIPInfoCountryMMDBIn,
+			URI:         uri,
+		}
+
+	case strings.ToLower(maxmind.TypeIPInfoASNMMDBIn):
+		input = &maxmind.IPInfoASNMMDBIn{
+			Type:        maxmind.TypeIPInfoASNMMDBIn,
+			Action:      lib.ActionAdd,
+			Description: maxmind.DescIPInfoASNMMDBIn,
 			URI:         uri,
 		}
 
