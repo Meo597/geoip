@@ -34,6 +34,20 @@ jobs:
         run: |
           echo "TAG_NAME=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
           echo "RELEASE_NAME=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+          case "${{ github.event_name }}" in
+            workflow_dispatch)
+              echo "RELEASE_NOTES=Manually triggered via GitHub Actions." >> $GITHUB_ENV
+              ;;
+            schedule)
+              echo "RELEASE_NOTES=Automatically published by scheduled workflow." >> $GITHUB_ENV
+              ;;
+            push)
+              echo "RELEASE_NOTES=Automatically published from the latest changes on master." >> $GITHUB_ENV
+              ;;
+            *)
+              echo "RELEASE_NOTES=Published by GitHub Actions." >> $GITHUB_ENV
+              ;;
+          esac
         shell: bash
 
       - name: Download IPinfo Lite database
@@ -101,4 +115,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ env.TAG_NAME }} --title "${{ env.RELEASE_NAME }}" ./output/*
+          gh release create ${{ env.TAG_NAME }} --title "${{ env.RELEASE_NAME }}" --notes "${{ env.RELEASE_NOTES }}" ./output/*
