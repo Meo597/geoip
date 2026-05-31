@@ -74,18 +74,13 @@ jobs:
             $(go env GOPATH)/bin/mmdbverify -file ${name}
           done
 
-      - name: Generate sha256 checksum for dat files
+      - name: Generate sha256 checksums
         run: |
           cd ./output || exit 1
-          for name in $(ls *.dat); do
-            sha256sum ${name} > ./${name}.sha256sum
-          done
-
-      - name: Generate sha256 checksum for mmdb files
-        run: |
-          cd ./output || exit 1
-          for name in $(ls *.mmdb); do
-            sha256sum ${name} > ./${name}.sha256sum
+          find . -type f ! -name "*.sha256sum" -print0 | sort -z | while IFS= read -r -d "" path; do
+            dir="${path%/*}"
+            name="${path##*/}"
+            (cd "$dir" && sha256sum -- "$name" > "${name}.sha256sum")
           done
 
       - name: Git push assets to "release" branch

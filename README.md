@@ -59,10 +59,6 @@
 - <https://raw.githubusercontent.com/Meo597/geoip/release/geoip.dat>
 - <https://raw.githubusercontent.com/Meo597/geoip/release/geoip-only-cn-private.dat>
 - <https://raw.githubusercontent.com/Meo597/geoip/release/geoip-asn.dat>
-- <https://raw.githubusercontent.com/Meo597/geoip/release/Country.mmdb>
-- <https://raw.githubusercontent.com/Meo597/geoip/release/Country-without-asn.mmdb>
-- <https://raw.githubusercontent.com/Meo597/geoip/release/Country-only-cn-private.mmdb>
-- <https://raw.githubusercontent.com/Meo597/geoip/release/Country-asn.mmdb>
 
 以下目录中，每个分类对应一个独立文件：
 
