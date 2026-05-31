@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"os"
 	"slices"
 	"strings"
@@ -78,6 +79,9 @@ func (s *Stdout) Output(container lib.Container) error {
 
 		cidrList, err := s.generateCIDRList(entry)
 		if err != nil {
+			if errors.Is(err, lib.ErrEmptyPrefix) {
+				log.Printf("⚠️ [type %s | action %s] entry %s has no CIDR", s.Type, s.Action, entry.GetName())
+			}
 			continue
 		}
 
@@ -132,7 +136,7 @@ func (s *Stdout) generateCIDRList(entry *lib.Entry) ([]string, error) {
 	}
 
 	if len(entryList) == 0 {
-		return nil, errors.New("empty CIDR list")
+		return nil, lib.ErrEmptyPrefix
 	}
 
 	return entryList, nil

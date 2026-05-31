@@ -2,6 +2,7 @@ package maxmind
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net"
 	"os"
@@ -178,6 +179,10 @@ func (g *GeoLite2CountryMMDBOut) filterAndSortList(container lib.Container) []st
 func (g *GeoLite2CountryMMDBOut) marshalData(writer *mmdbwriter.Tree, entry *lib.Entry, extraInfo map[string]any) error {
 	entryCidr, err := entry.MarshalText(lib.GetIgnoreIPType(g.OnlyIPType))
 	if err != nil {
+		if errors.Is(err, lib.ErrEmptyPrefix) {
+			log.Printf("⚠️ [type %s | action %s] entry %s has no CIDR", g.Type, g.Action, entry.GetName())
+			return nil
+		}
 		return err
 	}
 

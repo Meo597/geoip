@@ -3,7 +3,7 @@ package mihomo
 import (
 	"encoding/binary"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -140,11 +140,10 @@ func (m *MRSOut) filterAndSortList(container lib.Container) []string {
 func (m *MRSOut) generate(entry *lib.Entry) error {
 	ipRanges, err := entry.MarshalIPRange(lib.GetIgnoreIPType(m.OnlyIPType))
 	if err != nil {
-		return err
-	}
-
-	if len(ipRanges) == 0 {
-		return fmt.Errorf("❌ [type %s | action %s] entry %s has no CIDR", m.Type, m.Action, entry.GetName())
+		if !errors.Is(err, lib.ErrEmptyPrefix) {
+			return err
+		}
+		log.Printf("⚠️ [type %s | action %s] entry %s has no CIDR", m.Type, m.Action, entry.GetName())
 	}
 
 	filename := strings.ToLower(entry.GetName()) + ".mrs"

@@ -357,7 +357,7 @@ func (e *Entry) MarshalPrefix(opts ...IgnoreIPOption) ([]netip.Prefix, error) {
 		return prefixes, nil
 	}
 
-	return nil, fmt.Errorf("entry %s has no prefix", e.GetName())
+	return nil, fmt.Errorf("entry %s has no prefix: %w", e.GetName(), ErrEmptyPrefix)
 }
 
 func (e *Entry) MarshalIPRange(opts ...IgnoreIPOption) ([]netipx.IPRange, error) {
@@ -393,7 +393,7 @@ func (e *Entry) MarshalIPRange(opts ...IgnoreIPOption) ([]netipx.IPRange, error)
 		return ipranges, nil
 	}
 
-	return nil, fmt.Errorf("entry %s has no prefix", e.GetName())
+	return nil, fmt.Errorf("entry %s has no prefix: %w", e.GetName(), ErrEmptyPrefix)
 }
 
 func (e *Entry) MarshalText(opts ...IgnoreIPOption) ([]string, error) {
@@ -433,5 +433,5 @@ func (e *Entry) MarshalText(opts ...IgnoreIPOption) ([]string, error) {
 		return cidrList, nil
 	}
 
-	return nil, fmt.Errorf("entry %s has no prefix", e.GetName())
+	return nil, fmt.Errorf("entry %s has no prefix: %w", e.GetName(), ErrEmptyPrefix)
 }

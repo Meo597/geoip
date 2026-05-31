@@ -3,6 +3,7 @@ package plaintext
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"log"
 	"net"
 	"os"
@@ -85,7 +86,10 @@ func newTextOut(iType string, iDesc string, action lib.Action, data json.RawMess
 func (t *TextOut) marshalBytes(entry *lib.Entry) ([]byte, error) {
 	entryCidr, err := entry.MarshalText(lib.GetIgnoreIPType(t.OnlyIPType))
 	if err != nil {
-		return nil, err
+		if !errors.Is(err, lib.ErrEmptyPrefix) {
+			return nil, err
+		}
+		log.Printf("⚠️ [type %s | action %s] entry %s has no CIDR", t.Type, t.Action, entry.GetName())
 	}
 
 	var buf bytes.Buffer

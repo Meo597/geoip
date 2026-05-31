@@ -14,4 +14,5 @@ var (
 	ErrInvalidPrefix       = errors.New("invalid prefix")
 	ErrInvalidPrefixType   = errors.New("invalid prefix type")
 	ErrCommentLine         = errors.New("comment line")
+	ErrEmptyPrefix         = errors.New("entry has no prefix")
 )

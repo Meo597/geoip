@@ -2,7 +2,7 @@ package xray
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -183,7 +183,10 @@ func (g *GeoIPDatOut) filterAndSortList(container lib.Container) []string {
 func (g *GeoIPDatOut) generateGeoIP(entry *lib.Entry) (*GeoIP, error) {
 	entryCidr, err := entry.MarshalPrefix(lib.GetIgnoreIPType(g.OnlyIPType))
 	if err != nil {
-		return nil, err
+		if !errors.Is(err, lib.ErrEmptyPrefix) {
+			return nil, err
+		}
+		log.Printf("⚠️ [type %s | action %s] entry %s has no CIDR", g.Type, g.Action, entry.GetName())
 	}
 
 	xrayCIDR := make([]*CIDR, 0, len(entryCidr))
@@ -194,14 +197,10 @@ func (g *GeoIPDatOut) generateGeoIP(entry *lib.Entry) (*GeoIP, error) {
 		})
 	}
 
-	if len(xrayCIDR) > 0 {
-		return &GeoIP{
-			CountryCode: entry.GetName(),
-			Cidr:        xrayCIDR,
-		}, nil
-	}
-
-	return nil, fmt.Errorf("❌ [type %s | action %s] entry %s has no CIDR", g.Type, g.Action, entry.GetName())
+	return &GeoIP{
+		CountryCode: entry.GetName(),
+		Cidr:        xrayCIDR,
+	}, nil
 }
 
 // Sort by country code to make reproducible builds

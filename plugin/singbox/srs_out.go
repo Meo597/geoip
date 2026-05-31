@@ -2,7 +2,7 @@ package singbox
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -153,7 +153,10 @@ func (s *SRSOut) generate(entry *lib.Entry) error {
 func (s *SRSOut) marshalRuleSet(entry *lib.Entry) (*option.PlainRuleSet, error) {
 	entryCidr, err := entry.MarshalText(lib.GetIgnoreIPType(s.OnlyIPType))
 	if err != nil {
-		return nil, err
+		if !errors.Is(err, lib.ErrEmptyPrefix) {
+			return nil, err
+		}
+		log.Printf("⚠️ [type %s | action %s] entry %s has no CIDR", s.Type, s.Action, entry.GetName())
 	}
 
 	var headlessRule option.DefaultHeadlessRule
@@ -167,11 +170,7 @@ func (s *SRSOut) marshalRuleSet(entry *lib.Entry) (*option.PlainRuleSet, error) 
 		},
 	}
 
-	if len(headlessRule.IPCIDR) > 0 {
-		return &plainRuleSet, nil
-	}
-
-	return nil, fmt.Errorf("❌ [type %s | action %s] entry %s has no CIDR", s.Type, s.Action, entry.GetName())
+	return &plainRuleSet, nil
 }
 
 func (s *SRSOut) writeFile(filename string, ruleset *option.PlainRuleSet) error {
