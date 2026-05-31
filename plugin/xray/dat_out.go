@@ -102,7 +102,7 @@ func (g *GeoIPDatOut) Output(container lib.Container) error {
 	for _, name := range g.filterAndSortList(container) {
 		entry, found := container.GetEntry(name)
 		if !found {
-			log.Printf("❌ entry %s not found\n", name)
+			log.Printf("❌ entry %s not found", name)
 			continue
 		}
 

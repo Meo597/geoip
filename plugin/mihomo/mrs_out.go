@@ -89,7 +89,7 @@ func (m *MRSOut) Output(container lib.Container) error {
 	for _, name := range m.filterAndSortList(container) {
 		entry, found := container.GetEntry(name)
 		if !found {
-			log.Printf("❌ entry %s not found\n", name)
+			log.Printf("❌ entry %s not found", name)
 			continue
 		}
 

@@ -102,7 +102,7 @@ func (g *GeoLite2CountryMMDBOut) Output(container lib.Container) error {
 	for _, name := range g.filterAndSortList(container) {
 		entry, found := container.GetEntry(name)
 		if !found {
-			log.Printf("❌ entry %s not found\n", name)
+			log.Printf("❌ entry %s not found", name)
 			continue
 		}
 
@@ -211,7 +211,7 @@ func (g *GeoLite2CountryMMDBOut) marshalData(writer *mmdbwriter.Tree, entry *lib
 		case TypeGeoLite2CountryMMDBOut:
 			info, found := extraInfo[entry.GetName()].(geoip2.Country)
 			if !found {
-				log.Printf("⚠️ [type %s | action %s] not found extra info for list %s\n", g.Type, g.Action, entry.GetName())
+				log.Printf("⚠️ [type %s | action %s] not found extra info for list %s", g.Type, g.Action, entry.GetName())
 
 				record = mmdbtype.Map{
 					"country": mmdbtype.Map{
@@ -273,7 +273,7 @@ func (g *GeoLite2CountryMMDBOut) marshalData(writer *mmdbwriter.Tree, entry *lib
 		case TypeDBIPCountryMMDBOut:
 			info, found := extraInfo[entry.GetName()].(dbipCountry)
 			if !found {
-				log.Printf("⚠️ [type %s | action %s] not found extra info for list %s\n", g.Type, g.Action, entry.GetName())
+				log.Printf("⚠️ [type %s | action %s] not found extra info for list %s", g.Type, g.Action, entry.GetName())
 
 				record = mmdbtype.Map{
 					"country": mmdbtype.Map{
@@ -341,7 +341,7 @@ func (g *GeoLite2CountryMMDBOut) marshalData(writer *mmdbwriter.Tree, entry *lib
 		case TypeIPInfoCountryMMDBOut:
 			info, found := extraInfo[entry.GetName()].(ipInfoLite)
 			if !found {
-				log.Printf("⚠️ [type %s | action %s] not found extra info for list %s\n", g.Type, g.Action, entry.GetName())
+				log.Printf("⚠️ [type %s | action %s] not found extra info for list %s", g.Type, g.Action, entry.GetName())
 
 				record = mmdbtype.Map{
 					"country_code": mmdbtype.String(entry.GetName()),
