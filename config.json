@@ -4,7 +4,8 @@
       "type": "ipinfoCountryMMDB",
       "action": "add",
       "args": {
-        "uri": "./ipinfo/ipinfo_lite.mmdb"
+        "uri": "./ipinfo/ipinfo_lite.mmdb",
+        "includeAllCountries": true
       }
     },
     {

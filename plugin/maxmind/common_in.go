@@ -24,9 +24,10 @@ func defaultIPInfoLiteMMDBURI(uri string) string {
 
 func newGeoLite2CountryMMDBIn(iType string, iDesc string, action lib.Action, data json.RawMessage) (lib.InputConverter, error) {
 	var tmp struct {
-		URI        string     `json:"uri"`
-		Want       []string   `json:"wantedList"`
-		OnlyIPType lib.IPType `json:"onlyIPType"`
+		URI                 string     `json:"uri"`
+		Want                []string   `json:"wantedList"`
+		OnlyIPType          lib.IPType `json:"onlyIPType"`
+		IncludeAllCountries bool       `json:"includeAllCountries"`
 	}
 
 	if len(data) > 0 {
@@ -57,11 +58,12 @@ func newGeoLite2CountryMMDBIn(iType string, iDesc string, action lib.Action, dat
 	}
 
 	return &GeoLite2CountryMMDBIn{
-		Type:        iType,
-		Action:      action,
-		Description: iDesc,
-		URI:         tmp.URI,
-		Want:        wantList,
-		OnlyIPType:  tmp.OnlyIPType,
+		Type:                iType,
+		Action:              action,
+		Description:         iDesc,
+		URI:                 tmp.URI,
+		Want:                wantList,
+		OnlyIPType:          tmp.OnlyIPType,
+		IncludeAllCountries: tmp.IncludeAllCountries,
 	}, nil
 }

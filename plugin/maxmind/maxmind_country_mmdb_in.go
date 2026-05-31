@@ -26,12 +26,13 @@ func init() {
 }
 
 type GeoLite2CountryMMDBIn struct {
-	Type        string
-	Action      lib.Action
-	Description string
-	URI         string
-	Want        map[string]bool
-	OnlyIPType  lib.IPType
+	Type                string
+	Action              lib.Action
+	Description         string
+	URI                 string
+	Want                map[string]bool
+	OnlyIPType          lib.IPType
+	IncludeAllCountries bool
 }
 
 func (g *GeoLite2CountryMMDBIn) GetType() string {
@@ -149,5 +150,22 @@ func (g *GeoLite2CountryMMDBIn) generateEntries(content []byte, entries map[stri
 		entries[name] = entry
 	}
 
+	g.includeMissingCountryEntries(entries)
+
 	return nil
+}
+
+func (g *GeoLite2CountryMMDBIn) includeMissingCountryEntries(entries map[string]*lib.Entry) {
+	if !g.IncludeAllCountries || g.Action != lib.ActionAdd || entries == nil {
+		return
+	}
+
+	for _, code := range countryCodes {
+		if len(g.Want) > 0 && !g.Want[code] {
+			continue
+		}
+		if _, found := entries[code]; !found {
+			entries[code] = lib.NewEntry(code)
+		}
+	}
 }

@@ -179,6 +179,7 @@
   - **uri**：（可选）DB-IP country MMDB 格式文件路径，可为本地文件路径或远程 `http`、`https` 文件 URL。
   - **wantedList**：（可选）指定需要的类别/文件。
   - **onlyIPType**：（可选）只处理的 IP 地址类型，值为 `ipv4` 或 `ipv6`。
+  - **includeAllCountries**：（可选）值为 `true` 时，添加所有国家/地区代码；源 MMDB 中没有 CIDR 的国家/地区会生成空类别。仅对 `add` 操作生效。
 
 ```jsonc
 // 默认使用文件：
@@ -194,7 +195,8 @@
   "type": "dbipCountryMMDB",
   "action": "add",       // 添加 IP 地址
   "args": {
-    "uri": "./db-ip/dbip-country-lite.mmdb"
+    "uri": "./db-ip/dbip-country-lite.mmdb",
+    "includeAllCountries": true // 补全源 MMDB 中没有 CIDR 的国家/地区空类别
   }
 }
 ```
@@ -231,6 +233,7 @@
   - **uri**：（可选）IPInfo country MMDB 格式文件路径，可为本地文件路径或远程 `http`、`https` 文件 URL。
   - **wantedList**：（可选）指定需要的类别/文件。
   - **onlyIPType**：（可选）只处理的 IP 地址类型，值为 `ipv4` 或 `ipv6`。
+  - **includeAllCountries**：（可选）值为 `true` 时，添加所有国家/地区代码；源 MMDB 中没有 CIDR 的国家/地区会生成空类别。仅对 `add` 操作生效。
 
 ```jsonc
 // 默认使用文件：
@@ -246,7 +249,8 @@
   "type": "ipinfoCountryMMDB",
   "action": "add",       // 添加 IP 地址
   "args": {
-    "uri": "./ipinfo/ipinfo_lite.mmdb"
+    "uri": "./ipinfo/ipinfo_lite.mmdb",
+    "includeAllCountries": true // 补全源 MMDB 中没有 CIDR 的国家/地区空类别
   }
 }
 ```
@@ -542,6 +546,7 @@
   - **uri**：（可选）MaxMind GeoLite2 Country mmdb 格式文件路径，可为本地文件路径或远程 `http`、`https` 文件 URL。
   - **wantedList**：（可选）指定需要的类别/文件。
   - **onlyIPType**：（可选）只处理的 IP 地址类型，值为 `ipv4` 或 `ipv6`。
+  - **includeAllCountries**：（可选）值为 `true` 时，添加所有国家/地区代码；源 MMDB 中没有 CIDR 的国家/地区会生成空类别。仅对 `add` 操作生效。
 
 ```jsonc
 // 默认使用文件：
@@ -557,7 +562,8 @@
   "type": "maxmindMMDB",
   "action": "add",       // 添加 IP 地址
   "args": {
-    "uri": "./geolite2/GeoLite2-Country.mmdb"
+    "uri": "./geolite2/GeoLite2-Country.mmdb",
+    "includeAllCountries": true // 补全源 MMDB 中没有 CIDR 的国家/地区空类别
   }
 }
 ```
