@@ -46,6 +46,14 @@
 
 <https://github.com/Meo597/geoip/releases/latest>
 
+- GitHub Releases：`https://github.com/Meo597/geoip/releases/latest/download/<filename>`
+
+常用文件：
+
+- <https://github.com/Meo597/geoip/releases/latest/download/geoip.dat>
+- <https://github.com/Meo597/geoip/releases/latest/download/geoip-only-cn-private.dat>
+- <https://github.com/Meo597/geoip/releases/latest/download/geoip-asn.dat>
+
 ### “release” 分支
 
 <https://github.com/Meo597/geoip/tree/release>
