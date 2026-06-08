@@ -14,7 +14,6 @@
 
 `geoip:cn` 不是直接原样使用 IPInfo Lite。中国大陆 IPv4 会先从基础库中移除，再使用以下多个中国大陆 IPv4 列表合并重建：
 
-- metowolf/iplist
 - zhufengme/block_cn_files
 - misakaio/chnroutes2
 - gaoyifan/china-operator-ip 的 china.txt
@@ -87,7 +86,6 @@
 
 - 本项目从 [`Loyalsoldier/geoip@b84c0db4`](https://github.com/Loyalsoldier/geoip/commit/b84c0db4ad7286eb5cec870cabf6642a156290bc) 分叉而来
 - [IPInfo Lite](https://ipinfo.io/lite)
-- [metowolf/iplist](https://github.com/metowolf/iplist)
 - [zhufengme/block_cn_files](https://github.com/zhufengme/block_cn_files)
 - [misakaio/chnroutes2](https://github.com/misakaio/chnroutes2)
 - [gaoyifan/china-operator-ip](https://github.com/gaoyifan/china-operator-ip)
