@@ -89,3 +89,4 @@
 - [zhufengme/block_cn_files](https://github.com/zhufengme/block_cn_files)
 - [misakaio/chnroutes2](https://github.com/misakaio/chnroutes2)
 - [gaoyifan/china-operator-ip](https://github.com/gaoyifan/china-operator-ip)
+- [bgptools/anycast-prefixes](https://github.com/bgptools/anycast-prefixes)
