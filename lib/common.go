@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 func GetRemoteURLContent(url string) ([]byte, error) {
-	resp, err := http.Get(url)
+	resp, err := retryablehttp.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +24,7 @@ func GetRemoteURLContent(url string) ([]byte, error) {
 }
 
 func GetRemoteURLReader(url string) (io.ReadCloser, error) {
-	resp, err := http.Get(url)
+	resp, err := retryablehttp.Get(url)
 	if err != nil {
 		return nil, err
 	}

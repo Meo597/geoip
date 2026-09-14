@@ -3,6 +3,7 @@ module github.com/xtls/geoip
 go 1.26
 
 require (
+	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/klauspost/compress v1.19.1
 	github.com/maxmind/mmdbwriter v1.2.0
 	github.com/oschwald/geoip2-golang/v2 v2.2.0
@@ -17,6 +18,7 @@ require (
 )
 
 require (
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/miekg/dns v1.1.72 // indirect
 	github.com/sagernet/sing v0.8.12-0.20260726145744-ef2df370afca // indirect

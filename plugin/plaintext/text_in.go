@@ -3,12 +3,12 @@ package plaintext
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/xtls/geoip/lib"
 )
 
@@ -226,7 +226,7 @@ func (t *TextIn) walkLocalFile(path, name string, entries map[string]*lib.Entry)
 }
 
 func (t *TextIn) walkRemoteFile(url, name string, entries map[string]*lib.Entry) error {
-	resp, err := http.Get(url)
+	resp, err := retryablehttp.Get(url)
 	if err != nil {
 		return err
 	}

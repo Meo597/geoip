@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"net/netip"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/klauspost/compress/zstd"
 	"github.com/xtls/geoip/lib"
 	"go4.org/netipx"
@@ -204,7 +204,7 @@ func (m *MRSIn) walkLocalFile(path, name string, entries map[string]*lib.Entry) 
 }
 
 func (m *MRSIn) walkRemoteFile(url, name string, entries map[string]*lib.Entry) error {
-	resp, err := http.Get(url)
+	resp, err := retryablehttp.Get(url)
 	if err != nil {
 		return err
 	}
