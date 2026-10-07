@@ -87,19 +87,23 @@ func (e *Entry) processPrefix(src any) (*netip.Prefix, IPType, error) {
 		}
 
 	case *net.IPNet:
-		prefix, ok := netipx.FromStdIPNet(src)
+		if src == nil {
+			return nil, "", ErrInvalidIPNet
+		}
+		// Keep the mapped address until its mask width is accounted for.
+		ip, ok := netip.AddrFromSlice(src.IP)
 		if !ok {
 			return nil, "", ErrInvalidIPNet
 		}
-		ip := prefix.Addr().Unmap()
+		ones, bits := src.Mask.Size()
 		switch {
-		case ip.Is4():
-			return &prefix, IPv4, nil
-		case ip.Is6():
-			return &prefix, IPv6, nil
+		case bits == 32 && ip.Unmap().Is4():
+			ip = ip.Unmap()
+		case bits == 128 && ip.Is6():
 		default:
-			return nil, "", ErrInvalidIPLength
+			return nil, "", ErrInvalidIPNet
 		}
+		return e.processPrefix(netip.PrefixFrom(ip, ones))
 
 	case netip.Addr:
 		src = src.Unmap()
@@ -209,20 +213,7 @@ func (e *Entry) processPrefix(src any) (*netip.Prefix, IPType, error) {
 			if addr.Unmap().Is4() && strings.Contains(network.String(), "::") { // src is invalid IPv4-mapped IPv6 address
 				return nil, "", ErrInvalidCIDR
 			}
-			prefix, ok := netipx.FromStdIPNet(network)
-			if !ok {
-				return nil, "", ErrInvalidIPNet
-			}
-
-			addr = prefix.Addr().Unmap()
-			switch {
-			case addr.Is4():
-				return &prefix, IPv4, nil
-			case addr.Is6():
-				return &prefix, IPv6, nil
-			default:
-				return nil, "", ErrInvalidIPLength
-			}
+			return e.processPrefix(network)
 
 		case false: // src is IP address
 			ip, err := netip.ParseAddr(src)

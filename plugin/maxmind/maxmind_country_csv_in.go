@@ -181,10 +181,6 @@ func (g *GeoLite2CountryCSVIn) getCountryCode() (map[string]string, error) {
 			continue
 		}
 
-		if len(g.Want) > 0 && !g.Want[countryCode] {
-			continue
-		}
-
 		ccMap[id] = countryCode
 	}
 
@@ -233,31 +229,30 @@ func (g *GeoLite2CountryCSVIn) process(file string, ccMap map[string]string, ent
 			return fmt.Errorf("❌ [type %s | action %s] invalid record: %v", g.Type, g.Action, record)
 		}
 
-		ccID := ""
-		switch {
-		case strings.TrimSpace(record[1]) != "":
-			ccID = strings.TrimSpace(record[1])
-		case strings.TrimSpace(record[2]) != "":
-			ccID = strings.TrimSpace(record[2])
-		case strings.TrimSpace(record[3]) != "":
-			ccID = strings.TrimSpace(record[3])
-		default:
+		// A geoname ID may identify a continent. Resolve the country before
+		// filtering, so an unwanted country cannot fall back to a wanted one.
+		countryCode := ""
+		for _, ccID := range record[1:4] {
+			if cc, found := ccMap[strings.TrimSpace(ccID)]; found {
+				countryCode = cc
+				break
+			}
+		}
+		if countryCode == "" || (len(g.Want) > 0 && !g.Want[countryCode]) {
 			continue
 		}
 
-		if countryCode, found := ccMap[ccID]; found {
-			cidrStr := strings.ToLower(strings.TrimSpace(record[0]))
-			entry, got := entries[countryCode]
-			if !got {
-				entry = lib.NewEntry(countryCode)
-			}
-
-			if err := entry.AddPrefix(cidrStr); err != nil {
-				return err
-			}
-
-			entries[countryCode] = entry
+		cidrStr := strings.ToLower(strings.TrimSpace(record[0]))
+		entry, got := entries[countryCode]
+		if !got {
+			entry = lib.NewEntry(countryCode)
 		}
+
+		if err := entry.AddPrefix(cidrStr); err != nil {
+			return err
+		}
+
+		entries[countryCode] = entry
 	}
 
 	return nil
