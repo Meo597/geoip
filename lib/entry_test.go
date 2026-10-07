@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"errors"
 	"net"
 	"net/netip"
 	"slices"
@@ -25,7 +26,9 @@ func TestEntryMappedCIDR(t *testing.T) {
 			name  string
 			value any
 		}{
-			{"string", tc.cidr}, {"IPNet", network}, {"Prefix", prefix}, {"PrefixPointer", &prefix},
+			{"string", tc.cidr}, {"StringPointer", &tc.cidr},
+			{"IPNet", network}, {"IPNetValue", *network},
+			{"Prefix", prefix}, {"PrefixPointer", &prefix},
 		} {
 			t.Run(tc.cidr+"/"+source.name, func(t *testing.T) {
 				entry := NewEntry("test")
@@ -88,5 +91,164 @@ func TestEntryMappedCIDRMutationsInvalidateCache(t *testing.T) {
 	got, err = entry.MarshalText()
 	if err != nil || !slices.Equal(got, []string{"192.0.2.0/24"}) {
 		t.Fatalf("cached list after remove = %v, %v", got, err)
+	}
+}
+
+func TestEntryIPInputTypes(t *testing.T) {
+	for _, tc := range []struct{ address, want string }{
+		{"192.0.2.1", "192.0.2.1/32"},
+		{"::ffff:192.0.2.1", "192.0.2.1/32"},
+		{"2001:db8::1", "2001:db8::1/128"},
+	} {
+		for _, kind := range []string{"IP", "IPPointer", "Addr", "AddrPointer", "string", "StringPointer"} {
+			t.Run(tc.address+"/"+kind, func(t *testing.T) {
+				ip := net.ParseIP(tc.address)
+				originalIP := slices.Clone(ip)
+				addr := netip.MustParseAddr(tc.address)
+				originalAddr := addr
+				text := tc.address
+				var source any
+				switch kind {
+				case "IP":
+					source = ip
+				case "IPPointer":
+					source = &ip
+				case "Addr":
+					source = addr
+				case "AddrPointer":
+					source = &addr
+				case "string":
+					source = text
+				case "StringPointer":
+					source = &text
+				}
+				entry := NewEntry("test")
+				if err := entry.AddPrefix(source); err != nil {
+					t.Fatal(err)
+				}
+				got, err := entry.MarshalText()
+				if err != nil || !slices.Equal(got, []string{tc.want}) {
+					t.Fatalf("MarshalText = %v, %v; want %s", got, err, tc.want)
+				}
+				if addr != originalAddr || !slices.Equal(ip, originalIP) || text != tc.address {
+					t.Fatal("AddPrefix modified the caller's address")
+				}
+			})
+		}
+	}
+}
+
+func TestEntryNilAndInvalidInput(t *testing.T) {
+	var emptyIP net.IP
+	for _, tc := range []struct {
+		name      string
+		value     any
+		wantError error
+	}{
+		{"nil interface", nil, ErrInvalidPrefixType},
+		{"nil IP pointer", (*net.IP)(nil), ErrInvalidPrefixType},
+		{"nil IPNet pointer", (*net.IPNet)(nil), ErrInvalidPrefixType},
+		{"nil Addr pointer", (*netip.Addr)(nil), ErrInvalidPrefixType},
+		{"nil Prefix pointer", (*netip.Prefix)(nil), ErrInvalidPrefixType},
+		{"nil string pointer", (*string)(nil), ErrInvalidPrefixType},
+		{"unsupported type", 123, ErrInvalidPrefixType},
+		{"nil IP", emptyIP, ErrInvalidIP},
+		{"pointer to nil IP", &emptyIP, ErrInvalidIP},
+		{"invalid IP length", net.IP{192, 0, 2}, ErrInvalidIP},
+		{"zero IPNet", net.IPNet{}, ErrInvalidIPNet},
+		{"zero IPNet pointer", &net.IPNet{}, ErrInvalidIPNet},
+		{"zero Addr", netip.Addr{}, ErrInvalidIPType},
+		{"zero Prefix", netip.Prefix{}, ErrInvalidIPType},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			defer func() {
+				if p := recover(); p != nil {
+					t.Fatalf("AddPrefix panicked: %v", p)
+				}
+			}()
+			entry := NewEntry("test")
+			if err := entry.AddPrefix(tc.value); !errors.Is(err, tc.wantError) {
+				t.Fatalf("AddPrefix error = %v; want %v", err, tc.wantError)
+			}
+			if err := entry.AddPrefix("192.0.2.0/24"); err != nil {
+				t.Fatal(err)
+			}
+			got, err := entry.MarshalText()
+			if err != nil || !slices.Equal(got, []string{"192.0.2.0/24"}) {
+				t.Fatalf("invalid input poisoned the list: %v, %v", got, err)
+			}
+		})
+	}
+}
+
+func TestEntryIPNetMaskWidths(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		network net.IPNet
+		want    string
+	}{
+		{"four byte IPv4", net.IPNet{IP: net.IP{192, 0, 2, 1}, Mask: net.CIDRMask(24, 32)}, "192.0.2.0/24"},
+		{"mapped IPv4 with 32 bit mask", net.IPNet{IP: net.ParseIP("192.0.2.1"), Mask: net.CIDRMask(24, 32)}, "192.0.2.0/24"},
+		{"mapped IPv4 with 128 bit mask", net.IPNet{IP: net.ParseIP("192.0.2.1"), Mask: net.CIDRMask(120, 128)}, "192.0.2.0/24"},
+		{"IPv6", net.IPNet{IP: net.ParseIP("2001:db8::1"), Mask: net.CIDRMask(32, 128)}, "2001:db8::/32"},
+	} {
+		for _, source := range []struct {
+			name  string
+			value any
+		}{{"value", tc.network}, {"pointer", &tc.network}} {
+			t.Run(tc.name+"/"+source.name, func(t *testing.T) {
+				entry := NewEntry("test")
+				if err := entry.AddPrefix(source.value); err != nil {
+					t.Fatal(err)
+				}
+				got, err := entry.MarshalText()
+				if err != nil || !slices.Equal(got, []string{tc.want}) {
+					t.Fatalf("MarshalText = %v, %v; want %s", got, err, tc.want)
+				}
+			})
+		}
+	}
+	for _, network := range []net.IPNet{
+		{IP: net.ParseIP("192.0.2.1"), Mask: net.IPMask{255, 0, 255, 0}},
+		{IP: net.ParseIP("192.0.2.1"), Mask: net.CIDRMask(95, 128)},
+		{IP: net.ParseIP("2001:db8::1"), Mask: net.CIDRMask(24, 32)},
+		{IP: net.IP{192, 0, 2, 1}, Mask: net.CIDRMask(120, 128)},
+	} {
+		for _, source := range []any{network, &network} {
+			entry := NewEntry("test")
+			if err := entry.AddPrefix(source); err == nil {
+				t.Fatalf("accepted invalid IPNet: %v", network)
+			}
+			if err := entry.AddPrefix("192.0.2.0/24"); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := entry.MarshalText(); err != nil {
+				t.Fatalf("invalid IPNet poisoned the list: %v", err)
+			}
+		}
+	}
+}
+
+func TestEntryStringPointerComments(t *testing.T) {
+	for _, line := range []string{"", " ", "# comment", "// comment", "/* comment"} {
+		entry := NewEntry("test")
+		if err := entry.AddPrefix(&line); err != nil {
+			t.Fatalf("comment %q: %v", line, err)
+		}
+		if _, err := entry.MarshalText(); !errors.Is(err, ErrEmptyPrefix) {
+			t.Fatalf("comment created a prefix: %v", err)
+		}
+	}
+	for _, line := range []string{
+		" 192.0.2.1 # comment", "192.0.2.1 // comment", "192.0.2.1 /* comment",
+	} {
+		entry := NewEntry("test")
+		if err := entry.AddPrefix(&line); err != nil {
+			t.Fatal(err)
+		}
+		got, err := entry.MarshalText()
+		if err != nil || !slices.Equal(got, []string{"192.0.2.1/32"}) {
+			t.Fatalf("IP with comment = %v, %v", got, err)
+		}
 	}
 }
