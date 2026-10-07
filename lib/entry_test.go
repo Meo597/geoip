@@ -252,3 +252,80 @@ func TestEntryStringPointerComments(t *testing.T) {
 		}
 	}
 }
+
+func TestEntryCIDRStringNormalization(t *testing.T) {
+	for _, tc := range []struct{ input, want string }{
+		{"192.0.2.129/024", "192.0.2.0/24"},
+		{"192.0.2.1/000", "0.0.0.0/0"},
+		{"2001:db8::1/032", "2001:db8::/32"},
+		{"2001:db8::1/000", "::/0"},
+		{" 	::FFFF:192.0.2.129/0120 # comment", "192.0.2.0/24"},
+		{"::ffff:192.0.2.1/0096 // comment", "0.0.0.0/0"},
+		{"::ffff:192.0.2.1/0128 /* comment", "192.0.2.1/32"},
+	} {
+		for _, pointer := range []bool{false, true} {
+			t.Run(tc.input+map[bool]string{false: "/string", true: "/pointer"}[pointer], func(t *testing.T) {
+				input := tc.input
+				var source any = input
+				if pointer {
+					source = &input
+				}
+				entry := NewEntry("test")
+				if err := entry.AddPrefix(source); err != nil {
+					t.Fatal(err)
+				}
+				got, err := entry.MarshalText()
+				if err != nil || !slices.Equal(got, []string{tc.want}) {
+					t.Fatalf("normalized CIDR = %v, %v; want %s", got, err, tc.want)
+				}
+				if err := entry.RemovePrefix(input); err != nil {
+					t.Fatal(err)
+				}
+				if _, err := entry.MarshalText(); !errors.Is(err, ErrEmptyPrefix) {
+					t.Fatalf("normalized removal left prefixes: %v", err)
+				}
+			})
+		}
+	}
+}
+
+func TestEntryInvalidCIDRPreservesCachedPrefixes(t *testing.T) {
+	for _, input := range []string{
+		"192.0.2.1/33", "2001:db8::1/129", "192.0.2.1/-1",
+		"192.0.2.1/+24", "192.0.2.1/", "192.0.2.1/24/32",
+		"fe80::1%eth0/64", "192.00.2.1/24", "::ffff:192.0.2.1/095 # comment",
+	} {
+		t.Run(input, func(t *testing.T) {
+			entry := NewEntry("test")
+			if err := entry.AddPrefix("192.0.2.0/24"); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := entry.MarshalText(); err != nil {
+				t.Fatal(err)
+			}
+			for _, action := range []struct {
+				name string
+				run  func() error
+			}{
+				{"add", func() error { return entry.AddPrefix(input) }},
+				{"add pointer", func() error { return entry.AddPrefix(&input) }},
+				{"remove", func() error { return entry.RemovePrefix(input) }},
+			} {
+				if err := action.run(); !errors.Is(err, ErrInvalidCIDR) {
+					t.Fatalf("%s invalid CIDR error = %v", action.name, err)
+				}
+				got, err := entry.MarshalText()
+				if err != nil || !slices.Equal(got, []string{"192.0.2.0/24"}) {
+					t.Fatalf("%s changed cached prefixes: %v, %v", action.name, got, err)
+				}
+			}
+			if err := entry.AddPrefix("198.51.100.0/24"); err != nil {
+				t.Fatal(err)
+			}
+			got, err := entry.MarshalText()
+			if err != nil || !slices.Equal(got, []string{"192.0.2.0/24", "198.51.100.0/24"}) {
+				t.Fatalf("invalid CIDR poisoned later mutations: %v, %v", got, err)
+			}
+		})
+	}
+}

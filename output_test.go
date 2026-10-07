@@ -5,6 +5,7 @@ import (
 	"github.com/xtls/geoip/lib"
 	"github.com/xtls/geoip/plugin/xray"
 	"google.golang.org/protobuf/proto"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"slices"
@@ -131,5 +132,85 @@ func TestOutputWantedAndExcludedLists(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestGeoIPDatAggregateSelection(t *testing.T) {
+	cn := &xray.GeoIP{CountryCode: "CN", Cidr: []*xray.CIDR{{Ip: netip.MustParseAddr("192.0.2.0").AsSlice(), Prefix: 24}}}
+	us := &xray.GeoIP{CountryCode: "US", Cidr: []*xray.CIDR{{Ip: netip.MustParseAddr("2001:db8::").AsSlice(), Prefix: 32}}}
+	empty := &xray.GeoIP{CountryCode: "EMPTY"}
+	for _, tc := range []struct {
+		name          string
+		want, exclude []string
+		onlyIPType    lib.IPType
+		entries       []*xray.GeoIP
+	}{
+		{name: "partial exclusion", want: []string{" us ", "empty", " cn "}, exclude: []string{"US"}, entries: []*xray.GeoIP{cn, empty}},
+		{name: "all wanted excluded", want: []string{"cn"}, exclude: []string{"CN"}},
+		{name: "missing wanted category", want: []string{"missing"}},
+		{name: "IPv6 filter retains empty categories", want: []string{"cn", "empty", "us"}, exclude: []string{"us"}, onlyIPType: lib.IPv6, entries: []*xray.GeoIP{{CountryCode: "CN"}, empty}},
+		{name: "exclusion without wanted", exclude: []string{"cn"}, entries: []*xray.GeoIP{empty, us}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			container := lib.NewContainer()
+			for _, item := range []struct{ name, cidr string }{
+				{"cn", "::ffff:192.0.2.1/120"}, {"us", "2001:db8::1/32"}, {"empty", ""},
+			} {
+				entry := lib.NewEntry(item.name)
+				if item.cidr != "" {
+					if err := entry.AddPrefix(item.cidr); err != nil {
+						t.Fatal(err)
+					}
+				}
+				if err := container.Add(entry); err != nil {
+					t.Fatal(err)
+				}
+			}
+			dir := t.TempDir()
+			config, err := json.Marshal(map[string]any{"output": []any{map[string]any{
+				"type": "xrayGeoIPDat", "args": map[string]any{
+					"outputDir": dir, "outputName": "selection.dat",
+					"wantedList": tc.want, "excludedList": tc.exclude, "onlyIPType": tc.onlyIPType,
+				},
+			}}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			instance, err := lib.NewInstance()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := instance.InitConfigFromBytes(config); err != nil {
+				t.Fatal(err)
+			}
+			if err := instance.RunOutput(container); err != nil {
+				t.Fatal(err)
+			}
+			files, err := os.ReadDir(dir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(tc.entries) == 0 {
+				if len(files) != 0 {
+					t.Fatalf("empty selection exported %v", files)
+				}
+				return
+			}
+			if len(files) != 1 || files[0].Name() != "selection.dat" {
+				t.Fatalf("aggregate output files = %v", files)
+			}
+			data, err := os.ReadFile(filepath.Join(dir, "selection.dat"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var got xray.GeoIPList
+			if err := proto.Unmarshal(data, &got); err != nil {
+				t.Fatal(err)
+			}
+			want := &xray.GeoIPList{Entry: tc.entries}
+			if !proto.Equal(&got, want) {
+				t.Fatalf("aggregate DAT = %v; want %v", &got, want)
+			}
+		})
 	}
 }
