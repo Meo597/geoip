@@ -101,7 +101,6 @@ func (e *Entry) getPrefixFromIP(src net.IP) (*netip.Prefix, IPType, error) {
 }
 
 func (e *Entry) getPrefixFromIPNet(src net.IPNet) (*netip.Prefix, IPType, error) {
-	// Keep the mapped address until its mask width is accounted for.
 	ip, ok := netip.AddrFromSlice(src.IP)
 	if !ok {
 		return nil, "", ErrInvalidIPNet
@@ -182,14 +181,18 @@ func (e *Entry) getPrefixFromString(src string) (*netip.Prefix, IPType, error) {
 		if err != nil {
 			return nil, "", ErrInvalidCIDR
 		}
-		addr, ok := netipx.FromStdIP(ip)
+		addr, ok := netip.AddrFromSlice(ip)
 		if !ok {
 			return nil, "", ErrInvalidIP
 		}
-		if addr.Unmap().Is4() && strings.Contains(network.String(), "::") { // src is invalid IPv4-mapped IPv6 address
+		bits, width := network.Mask.Size()
+		if width == 32 {
+			addr = addr.Unmap()
+		}
+		if addr.Is4In6() && bits < 96 {
 			return nil, "", ErrInvalidCIDR
 		}
-		return e.getPrefixFromIPNet(*network)
+		return e.getPrefixFromPrefix(netip.PrefixFrom(addr, bits))
 
 	case false: // src is IP address
 		ip, err := netip.ParseAddr(src)
