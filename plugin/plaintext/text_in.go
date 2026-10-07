@@ -257,7 +257,7 @@ func (t *TextIn) appendIPOrCIDR(ipOrCIDR []string, name string, entries map[stri
 		return nil
 	}
 
-	name = strings.ToUpper(name)
+	name = strings.ToUpper(strings.TrimSpace(name))
 	if len(t.Want) > 0 && !t.Want[name] {
 		return nil
 	}
