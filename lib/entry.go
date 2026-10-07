@@ -5,11 +5,14 @@ import (
 	"net"
 	"net/netip"
 	"strings"
+	"sync"
 
 	"go4.org/netipx"
 )
 
+// Entry is safe for concurrent use and must not be copied after first use.
 type Entry struct {
+	mu          sync.Mutex
 	name        string
 	ipv4Builder *netipx.IPSetBuilder
 	ipv6Builder *netipx.IPSetBuilder
@@ -27,6 +30,7 @@ func (e *Entry) GetName() string {
 	return e.name
 }
 
+// The builder and set helpers require e.mu to be held.
 func (e *Entry) hasIPv4Builder() bool {
 	return e.ipv4Builder != nil
 }
@@ -44,27 +48,35 @@ func (e *Entry) hasIPv6Set() bool {
 }
 
 func (e *Entry) GetIPv4Set() (*netipx.IPSet, error) {
-	if err := e.buildIPSet(); err != nil {
+	ipv4set, _, err := e.ipSets()
+	if err != nil {
 		return nil, err
 	}
-
-	if e.hasIPv4Set() {
-		return e.ipv4Set, nil
+	if ipv4set != nil {
+		return ipv4set, nil
 	}
-
 	return nil, fmt.Errorf("entry %s has no ipv4 set", e.GetName())
 }
 
 func (e *Entry) GetIPv6Set() (*netipx.IPSet, error) {
-	if err := e.buildIPSet(); err != nil {
+	_, ipv6set, err := e.ipSets()
+	if err != nil {
 		return nil, err
 	}
-
-	if e.hasIPv6Set() {
-		return e.ipv6Set, nil
+	if ipv6set != nil {
+		return ipv6set, nil
 	}
-
 	return nil, fmt.Errorf("entry %s has no ipv6 set", e.GetName())
+}
+
+// ipSets returns immutable snapshots without holding the Entry lock afterward.
+func (e *Entry) ipSets() (*netipx.IPSet, *netipx.IPSet, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if err := e.buildIPSet(); err != nil {
+		return nil, nil, err
+	}
+	return e.ipv4Set, e.ipv6Set, nil
 }
 
 func (e *Entry) getPrefixFromIP(src net.IP) (*netip.Prefix, IPType, error) {
@@ -244,6 +256,8 @@ func (e *Entry) processPrefix(src any) (*netip.Prefix, IPType, error) {
 }
 
 func (e *Entry) add(prefix *netip.Prefix, ipType IPType) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 	switch ipType {
 	case IPv4:
 		if !e.hasIPv4Builder() {
@@ -265,6 +279,8 @@ func (e *Entry) add(prefix *netip.Prefix, ipType IPType) error {
 }
 
 func (e *Entry) remove(prefix *netip.Prefix, ipType IPType) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 	switch ipType {
 	case IPv4:
 		if e.hasIPv4Builder() {
@@ -311,6 +327,7 @@ func (e *Entry) RemovePrefix(cidr string) error {
 	return nil
 }
 
+// buildIPSet requires e.mu to be held.
 func (e *Entry) buildIPSet() error {
 	if e.hasIPv4Builder() && !e.hasIPv4Set() {
 		ipv4set, err := e.ipv4Builder.IPSet()
@@ -345,6 +362,9 @@ func (e *Entry) MarshalPrefix(opts ...IgnoreIPOption) ([]netip.Prefix, error) {
 	case IPv6:
 		disableIPv6 = true
 	}
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
 
 	if err := e.buildIPSet(); err != nil {
 		return nil, err
@@ -382,6 +402,9 @@ func (e *Entry) MarshalIPRange(opts ...IgnoreIPOption) ([]netipx.IPRange, error)
 		disableIPv6 = true
 	}
 
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
 	if err := e.buildIPSet(); err != nil {
 		return nil, err
 	}
@@ -417,6 +440,9 @@ func (e *Entry) MarshalText(opts ...IgnoreIPOption) ([]string, error) {
 	case IPv6:
 		disableIPv6 = true
 	}
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
 
 	if err := e.buildIPSet(); err != nil {
 		return nil, err

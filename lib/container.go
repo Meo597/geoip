@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"net/netip"
 	"strings"
+	"sync"
 
 	"go4.org/netipx"
 )
 
+// Container supports concurrent membership and prefix operations.
+// Loop snapshots membership; the returned Entry pointers remain shared.
 type Container interface {
 	GetEntry(name string) (*Entry, bool)
 	Len() int
@@ -18,6 +21,8 @@ type Container interface {
 }
 
 type container struct {
+	// Acquire the container lock before any Entry lock. Never hold two Entry locks.
+	mu      sync.RWMutex
 	entries map[string]*Entry
 }
 
@@ -32,6 +37,8 @@ func (c *container) isValid() bool {
 }
 
 func (c *container) GetEntry(name string) (*Entry, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	if !c.isValid() {
 		return nil, false
 	}
@@ -43,6 +50,8 @@ func (c *container) GetEntry(name string) (*Entry, bool) {
 }
 
 func (c *container) Len() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	if !c.isValid() {
 		return 0
 	}
@@ -50,7 +59,9 @@ func (c *container) Len() int {
 }
 
 func (c *container) Loop() <-chan *Entry {
-	ch := make(chan *Entry, c.Len())
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	ch := make(chan *Entry, len(c.entries))
 	for _, val := range c.entries {
 		ch <- val
 	}
@@ -67,24 +78,25 @@ func (c *container) Add(entry *Entry, opts ...IgnoreIPOption) error {
 	}
 
 	name := entry.GetName()
-	val, found := c.GetEntry(name)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	val, found := c.entries[name]
 
 	switch found {
 	case true:
-		var ipv4set, ipv6set *netipx.IPSet
-		var err4, err6 error
-		if entry.hasIPv4Builder() {
-			ipv4set, err4 = entry.ipv4Builder.IPSet()
-			if err4 != nil {
-				return err4
-			}
+		if val == entry {
+			entry.mu.Lock()
+			defer entry.mu.Unlock()
+			// Self-merging is a no-op; do not re-add a stale source snapshot.
+			return entry.buildIPSet()
 		}
-		if entry.hasIPv6Builder() {
-			ipv6set, err6 = entry.ipv6Builder.IPSet()
-			if err6 != nil {
-				return err6
-			}
+		// Release the source lock before locking the destination.
+		ipv4set, ipv6set, err := entry.ipSets()
+		if err != nil {
+			return err
 		}
+		val.mu.Lock()
+		defer val.mu.Unlock()
 		switch ignoreIPType {
 		case IPv4:
 			if ipv6set != nil {
@@ -120,6 +132,8 @@ func (c *container) Add(entry *Entry, opts ...IgnoreIPOption) error {
 		}
 
 	case false:
+		entry.mu.Lock()
+		defer entry.mu.Unlock()
 		switch ignoreIPType {
 		case IPv4:
 			entry.ipv4Builder = nil
@@ -136,11 +150,6 @@ func (c *container) Add(entry *Entry, opts ...IgnoreIPOption) error {
 
 func (c *container) Remove(entry *Entry, rCase CaseRemove, opts ...IgnoreIPOption) error {
 	name := entry.GetName()
-	val, found := c.GetEntry(name)
-	if !found {
-		return fmt.Errorf("entry %s not found", name)
-	}
-
 	var ignoreIPType IPType
 	for _, opt := range opts {
 		if opt != nil {
@@ -148,21 +157,32 @@ func (c *container) Remove(entry *Entry, rCase CaseRemove, opts ...IgnoreIPOptio
 		}
 	}
 
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	val, found := c.entries[name]
+	if !found {
+		return fmt.Errorf("entry %s not found", name)
+	}
+
 	switch rCase {
 	case CaseRemovePrefix:
 		var ipv4set, ipv6set *netipx.IPSet
-		var err4, err6 error
-		if entry.hasIPv4Builder() {
-			ipv4set, err4 = entry.ipv4Builder.IPSet()
-			if err4 != nil {
-				return err4
+		if val == entry {
+			val.mu.Lock()
+			defer val.mu.Unlock()
+			if err := val.buildIPSet(); err != nil {
+				return err
 			}
-		}
-		if entry.hasIPv6Builder() {
-			ipv6set, err6 = entry.ipv6Builder.IPSet()
-			if err6 != nil {
-				return err6
+			ipv4set, ipv6set = val.ipv4Set, val.ipv6Set
+		} else {
+			// Release the source lock before locking the destination.
+			var err error
+			ipv4set, ipv6set, err = entry.ipSets()
+			if err != nil {
+				return err
 			}
+			val.mu.Lock()
+			defer val.mu.Unlock()
 		}
 
 		switch ignoreIPType {
@@ -200,6 +220,8 @@ func (c *container) Remove(entry *Entry, rCase CaseRemove, opts ...IgnoreIPOptio
 		}
 
 	case CaseRemoveEntry:
+		val.mu.Lock()
+		defer val.mu.Unlock()
 		switch ignoreIPType {
 		case IPv4:
 			val.ipv6Builder = nil
@@ -273,23 +295,19 @@ func (c *container) lookup(addrOrPrefix any, iptype IPType, searchList ...string
 			continue
 		}
 
-		var ipset *netipx.IPSet
-		var err error
-		switch iptype {
-		case IPv4:
-			if !entry.hasIPv4Builder() {
-				continue
-			}
-			ipset, err = entry.GetIPv4Set()
-		case IPv6:
-			if !entry.hasIPv6Builder() {
-				continue
-			}
-			ipset, err = entry.GetIPv6Set()
-		}
-
+		ipv4set, ipv6set, err := entry.ipSets()
 		if err != nil {
 			return nil, false, err
+		}
+		var ipset *netipx.IPSet
+		switch iptype {
+		case IPv4:
+			ipset = ipv4set
+		case IPv6:
+			ipset = ipv6set
+		}
+		if ipset == nil {
+			continue
 		}
 
 		switch addrOrPrefix := addrOrPrefix.(type) {
